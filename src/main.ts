@@ -1,9 +1,9 @@
 import './scss/styles.scss';
 
-import { MainPageCatalog } from './Models/MainPageCatalog';
-import { Basket } from './Models/Basket';
-import { BuyerData } from './Models/BuyerData';
-import { CommunicationAPI } from './Models/CommunicationAPI';
+import { MainPageCatalog } from './components/Models/MainPageCatalog';
+import { Basket } from './components/Models/Basket';
+import { BuyerData } from './components/Models/BuyerData';
+import { CommunicationAPI } from './components/Models/CommunicationAPI';
 import { Api } from './components/base/Api';
 import { API_URL } from './utils/constants';
 
@@ -63,14 +63,13 @@ console.log('=== ТЕСТ: ПОКУПАТЕЛЬ ===');
 
 const buyer = new BuyerData();
 
-// правильный формат
+// вводим часть данных покупателя, чтобы получить ошибки по валидации
 buyer.setData({ payment: 'cash' });
 buyer.setData({ address: 'Москва, ул. Петровка, 38' });
-buyer.setData({ email: 'police@saveyou.com' });
-buyer.setData({ phone: '+70951234578' });
 
 console.log('Данные покупателя:', buyer.getData());
 
+// Проверяем валидацию (должны быть ошибки по payment и email)
 console.log('Результат валидации:', buyer.validate());
 
 buyer.clear();

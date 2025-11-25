@@ -1,11 +1,9 @@
-import { IProduct } from '../types';
+import { IProduct } from '../../types';
 
 export class Basket {
 	private items: IProduct[] = [];
 
-	constructor(initialItems: IProduct[] = []) {
-		this.items = [...initialItems];
-	}
+	constructor() {}
 
 	// получение массива товаров в корзине
 	public getItems(): IProduct[] {

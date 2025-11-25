@@ -1,5 +1,5 @@
-import { IApi } from '../types';
-import { IApiProductList, IOrderRequest, IOrderResponse } from '../types';
+import { IApi } from '../../types';
+import { IApiProductList, IOrderRequest, IOrderResponse } from '../../types';
 
 export class CommunicationAPI {
 	private api: IApi;
@@ -15,6 +15,6 @@ export class CommunicationAPI {
 
 	// Отправить заказ
 	public async postOrder(data: IOrderRequest): Promise<IOrderResponse> {
-		return this.api.post('/order/', data);
+		return this.api.post<IOrderResponse>('/order/', data);
 	}
 }

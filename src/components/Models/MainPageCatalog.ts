@@ -1,13 +1,11 @@
 // src/Models/MainPageCatalog.ts
-import { IProduct } from '../types';
+import { IProduct } from '../../types';
 
 export class MainPageCatalog {
 	private products: IProduct[] = [];
 	private selectedProduct: IProduct | null = null;
 
-	constructor(initialProducts: IProduct[] = []) {
-		this.products = [...initialProducts];
-	}
+	constructor() {}
 
 	// сохранение массива товаров, полученного в параметрах метода
 	public setProducts(products: IProduct[]): void {
@@ -22,7 +20,7 @@ export class MainPageCatalog {
 		}
 	}
   }
-  
+
 	// получение массива товаров из модели
 	public getProducts(): IProduct[] {
 		return [...this.products];

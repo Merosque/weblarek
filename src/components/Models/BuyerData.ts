@@ -1,4 +1,4 @@
-import { IBuyer } from '../types';
+import { IBuyer } from '../../types';
 
 export type BuyerValidationErrors = Partial<Record<keyof IBuyer, string>>;
 
@@ -8,11 +8,7 @@ export class BuyerData {
 	private email = '';
 	private phone = '';
 
-	constructor(initialData?: Partial<IBuyer>) {
-		if (initialData) {
-			this.setData(initialData);
-		}
-	}
+	constructor() {}
 
 	// Сохранение данных в модели
 	public setData(data: Partial<IBuyer>): void {
@@ -48,30 +44,26 @@ export class BuyerData {
 		this.phone = '';
 	}
 
-	// Валидация: поле валидно, если оно НЕ пустое (после trim)
-	// Возвращаем общую валидность и ошибки по полям
-	public validate(): { valid: boolean; errors: BuyerValidationErrors } {
+	// Валидация
+	public validate(): BuyerValidationErrors {
 		const errors: BuyerValidationErrors = {};
 
-		if (!this.payment || this.payment.trim() === '') {
+		if (!this.payment?.trim()) {
 			errors.payment = 'Выберите способ оплаты: card или cash';
 		}
 
-		if (!this.address || this.address.trim() === '') {
+		if (!this.address.trim()) {
 			errors.address = 'Введите адрес доставки';
 		}
 
-		if (!this.email || this.email.trim() === '') {
+		if (!this.email.trim()) {
 			errors.email = 'Введите email';
 		}
 
-		if (!this.phone || this.phone.trim() === '') {
+		if (!this.phone.trim()) {
 			errors.phone = 'Введите телефон';
 		}
 
-		return {
-			valid: Object.keys(errors).length === 0,
-			errors,
-		};
+		return errors;
 	}
 }
