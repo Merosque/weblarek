@@ -1,4 +1,3 @@
-// src/components/Models/MainPageCatalog.ts
 import { IProduct } from '../../types';
 import { IEvents } from '../base/Events';
 

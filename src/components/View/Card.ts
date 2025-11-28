@@ -1,8 +1,5 @@
-// src/components/View/Card.ts
 import { Component } from '../base/Component';
 import { categoryMap } from '../../utils/constants';
-
-type CategoryKey = keyof typeof categoryMap;
 
 export class Card<T = unknown> extends Component<T> {
 	protected _element: HTMLElement;
@@ -39,24 +36,20 @@ export class Card<T = unknown> extends Component<T> {
 			price === null ? 'Бесценно' : `${price} синапсов`;
 	}
 
-	// ВАЖНО: не переопределяем Component.setImage,
+	// Не переопределяем Component.setImage,
 	// а делаем свой удобный метод-обёртку
 	public setCardImage(src: string, alt = ''): void {
 		this.setImage(this._image, src, alt); // вызываем protected метод базового класса
 	}
 
-	public setCategory(category: string): void {
-		this._category.textContent = category;
+	public setCategory(category: keyof typeof categoryMap): void {
+	this._category.textContent = category;
 
-		const key = category as CategoryKey;
-		const modifier = categoryMap[key];
-
-		if (modifier) {
-			this._category.className = `card__category ${modifier}`;
-		} else {
-			this._category.className = 'card__category';
-		}
+	const modifier = categoryMap[category];
+	if (modifier) {
+		this._category.className = `card__category ${modifier}`;
 	}
+}
 
 	public setButtonText(text: string): void {
 		if (this._button) {

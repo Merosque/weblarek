@@ -1,4 +1,3 @@
-// src/components/View/BasketItemCard.ts
 import { Card } from './Card';
 import { EventEmitter } from '../base/Events';
 

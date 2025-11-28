@@ -1,4 +1,3 @@
-// src/components/View/BasketView.ts
 import { Component } from '../base/Component';
 import { EventEmitter } from '../base/Events';
 

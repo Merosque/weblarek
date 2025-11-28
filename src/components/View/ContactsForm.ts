@@ -1,15 +1,21 @@
-// src/components/View/ContactsForm.ts
 import { Form } from './Form';
 import { EventEmitter } from '../base/Events';
 
-export class ContactsForm extends Form {
+interface IContactsFormState {
+	email: string;
+	phone: string;
+}
+
+export class ContactsForm extends Form<IContactsFormState> {
 	private _emailInput: HTMLInputElement;
 	private _phoneInput: HTMLInputElement;
-	private _events: EventEmitter;
 
 	constructor(template: HTMLTemplateElement, events: EventEmitter) {
-		super(template);
-		this._events = events;
+		const form = template.content
+			.querySelector('form')!
+			.cloneNode(true) as HTMLFormElement;
+
+		super(form, events);
 
 		this._emailInput = this.container.querySelector(
 			'input[name="email"]'
@@ -19,9 +25,8 @@ export class ContactsForm extends Form {
 			'input[name="phone"]'
 		) as HTMLInputElement;
 
-		// любое изменение полей
 		const onChange = () => {
-			this._events.emit('contacts:change', {
+			this.events.emit('contacts:change', {
 				email: this._emailInput.value,
 				phone: this._phoneInput.value,
 			});
@@ -29,14 +34,12 @@ export class ContactsForm extends Form {
 
 		this._emailInput.addEventListener('input', onChange);
 		this._phoneInput.addEventListener('input', onChange);
+	}
 
-		// отправка формы — шаг 2 оформления
-		this._form.addEventListener('submit', (event) => {
-			event.preventDefault();
-			this._events.emit('order:submit-step2', {
-				email: this._emailInput.value,
-				phone: this._phoneInput.value,
-			});
+	protected onSubmit(): void {
+		this.events.emit('order:submit-step2', {
+			email: this._emailInput.value,
+			phone: this._phoneInput.value,
 		});
 	}
 

@@ -1,17 +1,24 @@
-// src/components/View/OrderForm.ts
 import { Form } from './Form';
 import { EventEmitter } from '../base/Events';
 import { TPayment } from '../../types';
 
-export class OrderForm extends Form {
+interface IOrderFormState {
+	payment: TPayment;
+	address: string;
+}
+
+export class OrderForm extends Form<IOrderFormState> {
 	private _paymentButtons: NodeListOf<HTMLButtonElement>;
 	private _addressInput: HTMLInputElement;
-	private _events: EventEmitter;
 	private _payment: TPayment = '';
 
 	constructor(template: HTMLTemplateElement, events: EventEmitter) {
-		super(template);
-		this._events = events;
+		// достаём и клонируем <form> из шаблона
+		const form = template.content
+			.querySelector('form')!
+			.cloneNode(true) as HTMLFormElement;
+
+		super(form, events);
 
 		this._paymentButtons = this.container.querySelectorAll(
 			'.order__buttons .button'
@@ -30,24 +37,23 @@ export class OrderForm extends Form {
 
 		// ввод адреса
 		this._addressInput.addEventListener('input', () => {
-			this._events.emit('order:change', {
-				payment: this._payment,
-				address: this._addressInput.value,
-			});
-		});
-
-		// отправка формы — переход ко второму шагу
-		this._form.addEventListener('submit', (event) => {
-			event.preventDefault();
-			this._events.emit('order:submit-step1', {
+			this.events.emit('order:change', {
 				payment: this._payment,
 				address: this._addressInput.value,
 			});
 		});
 	}
 
+	// Сабмит формы — только генерируем событие, презентер (main.ts) всё решает
+	protected onSubmit(): void {
+		this.events.emit('order:submit-step1', {
+			payment: this._payment,
+			address: this._addressInput.value,
+		});
+	}
+
 	private handlePaymentClick(btn: HTMLButtonElement): void {
-		// В вёрстке name="card" / "cash", а в типе TPayment 'online' | 'cash' | ''
+		// В вёрстке name="card"/"cash", а в типе TPayment 'online' | 'cash' | ''
 		const name = btn.getAttribute('name');
 		this._payment = (name === 'card' ? 'online' : 'cash') as TPayment;
 
@@ -55,7 +61,7 @@ export class OrderForm extends Form {
 			b.classList.toggle('button_alt-active', b === btn)
 		);
 
-		this._events.emit('order:change', {
+		this.events.emit('order:change', {
 			payment: this._payment,
 			address: this._addressInput.value,
 		});

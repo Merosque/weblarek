@@ -1,4 +1,3 @@
-// src/components/Models/Basket.ts
 import { IProduct } from '../../types';
 import { IEvents } from '../base/Events';
 

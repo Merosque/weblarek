@@ -8,15 +8,15 @@ export class SuccessView extends Component<{}> {
 	constructor(template: HTMLTemplateElement, events: EventEmitter) {
 		super(template.content.firstElementChild!.cloneNode(true) as HTMLElement);
 
-		this._description = this.container.querySelector('.success__description')!;
-		this._button = this.container.querySelector('.success__button')!;
+		this._description = this.container.querySelector('.order-success__description')!;
+		this._button = this.container.querySelector('.order-success__close')!;
 
 		this._button.addEventListener('click', () => {
 			events.emit('success:close', {});
 		});
 	}
 
-	setTotal(total: number) {
+	public setTotal(total: number) {
 		this._description.textContent = `Списано ${total} синапсов`;
 	}
 }

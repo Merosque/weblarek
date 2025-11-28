@@ -1,9 +1,9 @@
-// src/components/View/PreviewCard.ts
 import { Card } from './Card';
 import { EventEmitter } from '../base/Events';
 
 export class PreviewCard extends Card {
 	private _description: HTMLElement;
+	declare _button: HTMLButtonElement;
 	private _events: EventEmitter;
 	private _id: string;
 
@@ -13,6 +13,13 @@ export class PreviewCard extends Card {
 		productId: string
 	) {
 		super(template);
+
+		this._description = this.container.querySelector('.card__text') as HTMLElement;
+		this._button = this.container.querySelector('.card__button') as HTMLButtonElement;
+		// Клик по карточке — открыть предпросмотр
+		this.container.addEventListener('click', () => {
+			this._events.emit('card:select', { id: this._id });
+		});
 
 		this._events = events;
 		this._id = productId;

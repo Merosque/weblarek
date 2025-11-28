@@ -1,4 +1,3 @@
-// src/components/Models/BuyerData.ts
 import { IBuyer } from '../../types';
 import { IEvents } from '../base/Events';
 
