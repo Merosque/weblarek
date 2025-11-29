@@ -46,7 +46,7 @@ export class OrderForm extends Form<IOrderFormState> {
 
 	// Сабмит формы — только генерируем событие, презентер (main.ts) всё решает
 	protected onSubmit(): void {
-		this.events.emit('order:submit-step1', {
+		this.events.emit('order:submit-DeliverForm', {
 			payment: this._payment,
 			address: this._addressInput.value,
 		});

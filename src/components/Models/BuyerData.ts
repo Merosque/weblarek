@@ -60,13 +60,23 @@ export class BuyerData {
 			errors.address = 'Введите адрес доставки';
 		}
 
-		if (!this.email?.trim()) {
-			errors.email = 'Введите email';
-		}
+		 if (!this.email?.trim()) {
+        errors.email = 'Введите email';
+    } else {
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!EMAIL_REGEX.test(this.email)) {
+            errors.email = 'Некорректный email';
+        }
+    }
 
 		if (!this.phone?.trim()) {
-			errors.phone = 'Введите телефон';
-		}
+    errors.phone = 'Введите телефон';
+} else {
+    const PHONE_REGEX = /^\+[1-9]\d{7,14}$/;
+    if (!PHONE_REGEX.test(this.phone)) {
+        errors.phone = 'Некорректный телефон (используйте формат +XXXXXXXXXXX)';
+    }
+}
 
 		return errors;
 	}

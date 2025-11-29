@@ -9,7 +9,7 @@ export class CommunicationAPI {
 	}
 
 	// Получить каталог товаров
-	public async getProducts(): Promise<IApiProductList> {
+	public getProducts(): Promise<IApiProductList> {
 		return this.api.get<IApiProductList>('/product/'); ;
 	}
 

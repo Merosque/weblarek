@@ -37,7 +37,7 @@ export class ContactsForm extends Form<IContactsFormState> {
 	}
 
 	protected onSubmit(): void {
-		this.events.emit('order:submit-step2', {
+		this.events.emit('order:submit-ContactsForm', {
 			email: this._emailInput.value,
 			phone: this._phoneInput.value,
 		});

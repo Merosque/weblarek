@@ -1,50 +1,31 @@
 import { Card } from './Card';
 import { EventEmitter } from '../base/Events';
+import { IProduct } from '../../types';
+import { categoryMap, CDN_URL } from '../../utils/constants';
 
 export class PreviewCard extends Card {
 	private _description: HTMLElement;
 	declare _button: HTMLButtonElement;
 	private _events: EventEmitter;
-	private _id: string;
+	private _id: string | null = null;
 
-	constructor(
-		template: HTMLTemplateElement,
-		events: EventEmitter,
-		productId: string
-	) {
+	constructor(template: HTMLTemplateElement, events: EventEmitter) {
+		// клонируем корень из шаблона
 		super(template);
+
+		this._events = events;
 
 		this._description = this.container.querySelector('.card__text') as HTMLElement;
 		this._button = this.container.querySelector('.card__button') as HTMLButtonElement;
-		// Клик по карточке — открыть предпросмотр
-		this.container.addEventListener('click', () => {
-			this._events.emit('card:select', { id: this._id });
-		});
 
-		this._events = events;
-		this._id = productId;
+		// Один раз вешаем обработчик на кнопку
+		this._button.addEventListener('click', () => {
+			if (!this._id) return;
 
-		this._description = this.getElement().querySelector(
-			'.card__text'
-		) as HTMLElement;
-
-		// Кнопка в шаблоне предпросмотра обязательно должна быть, сохраним её в локальную константу button
-		const button = this._button;
-		if (!button) {
-			throw new Error(
-				'PreviewCard template must contain .card__button element'
-			);
-		}
-
-		button.addEventListener('click', () => {
-			if (button.classList.contains('remove')) {
-				this._events.emit('preview:remove-from-basket', {
-					id: this._id,
-				});
+			if (this._button.classList.contains('remove')) {
+				this._events.emit('preview:remove-from-basket', { id: this._id });
 			} else {
-				this._events.emit('preview:add-to-basket', {
-					id: this._id,
-				});
+				this._events.emit('preview:add-to-basket', { id: this._id });
 			}
 		});
 	}
@@ -54,19 +35,29 @@ export class PreviewCard extends Card {
 	}
 
 	/**
-	 * Обновляет кнопку в предпросмотре в зависимости
-	 * от того, доступен товар и находится ли он в корзине
+	 * Заполнить карточку данными товара и обновить состояние кнопки
+	 */
+	public setProduct(product: IProduct, inBasket: boolean, available: boolean): void {
+		this._id = product.id;
+
+		this.setTitle(product.title);
+		this.setCategory(product.category as keyof typeof categoryMap);
+		this.setDescription(product.description);
+		this.setPrice(product.price);
+		this.setCardImage(`${CDN_URL}${product.image}`, product.title);
+
+		this.setInBasket(inBasket, available);
+	}
+
+	/**
+	 * Обновляет кнопку в предпросмотре в зависимости от того,
+	 * доступен ли товар и находится ли он в корзине
 	 */
 	public setInBasket(inBasket: boolean, available: boolean): void {
-		const button = this._button;
-		if (!button) {
-			return;
-		}
-
 		if (!available) {
 			this.setButtonDisabled(true);
 			this.setButtonText('Недоступно');
-			button.classList.remove('remove');
+			this._button.classList.remove('remove');
 			return;
 		}
 
@@ -74,10 +65,10 @@ export class PreviewCard extends Card {
 
 		if (inBasket) {
 			this.setButtonText('Удалить из корзины');
-			button.classList.add('remove');
+			this._button.classList.add('remove');
 		} else {
-			this.setButtonText('Купить');
-			button.classList.remove('remove');
+			this.setButtonText('В корзину');
+			this._button.classList.remove('remove');
 		}
 	}
 }

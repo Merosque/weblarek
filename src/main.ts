@@ -11,6 +11,10 @@ import { EventEmitter } from './components/base/Events';
 import { API_URL, categoryMap, CDN_URL } from './utils/constants';
 import { IProduct } from './types';
 
+import { Page } from './components/View/Page';
+import { ensureElement } from './utils/utils';
+
+
 // ===== View-компоненты =====
 
 import { CatalogCard } from './components/View/CatalogCard';
@@ -23,21 +27,9 @@ import { SuccessView } from './components/View/SuccessView';
 import { Modal } from './components/View/Modal';
 
 // Хелпер для получения шаблонов
-
 function getTemplate(selector: string): HTMLTemplateElement {
-	const template = document.querySelector<HTMLTemplateElement>(selector);
-	if (!template) {
-		throw new Error(`Template not found: ${selector}`);
-	}
-	return template;
+	return ensureElement<HTMLTemplateElement>(selector);
 }
-
-// ===== Инициализация DOM-узлов =====
-
-const gallery = document.querySelector<HTMLElement>('.gallery');
-const headerBasketButton = document.querySelector<HTMLButtonElement>('.header__basket');
-const headerBasketCounter = document.querySelector<HTMLElement>('.header__basket-counter');
-const modalContainer = document.querySelector<HTMLElement>('#modal-container');
 
 const catalogTemplate = getTemplate('#card-catalog');
 const previewTemplate = getTemplate('#card-preview');
@@ -47,25 +39,17 @@ const orderTemplate = getTemplate('#order');
 const contactsTemplate = getTemplate('#contacts');
 const successTemplate = getTemplate('#success');
 
-if (
-	!gallery ||
-	!headerBasketButton ||
-	!headerBasketCounter ||
-	!modalContainer ||
-	!catalogTemplate ||
-	!previewTemplate ||
-	!basketItemTemplate ||
-	!basketTemplate ||
-	!orderTemplate ||
-	!contactsTemplate ||
-	!successTemplate
-) {
-	throw new Error('Не удалось найти один или несколько DOM-элементов для инициализации приложения');
-}
+// ===== Инициализация DOM-узлов =====
+
+// корневой контейнер модалки получаем через ensureElement
+const modalContainer = ensureElement<HTMLElement>('#modal-container');
 
 // ===== Ядро событий и моделей =====
 
 const events = new EventEmitter();
+
+// страница (шапка + контейнер каталога)
+const page = new Page(events);
 
 // модели данных
 const catalog = new MainPageCatalog(events);
@@ -86,6 +70,7 @@ const basketView = new BasketView(basketTemplate, events);
 const orderForm = new OrderForm(orderTemplate, events);
 const contactsForm = new ContactsForm(contactsTemplate, events);
 const successView = new SuccessView(successTemplate, events);
+const previewView = new PreviewCard(previewTemplate, events);
 
 // ===== Вспомогательные функции =====
 
@@ -131,9 +116,7 @@ function renderBasket() {
 	basketView.setEmpty(count === 0);
 
 	// счётчик на иконке корзины
-	if (headerBasketCounter) {
-			headerBasketCounter.textContent = String(count);
-	}
+	page.setBasketCount(count);
 }
 
 /**
@@ -147,7 +130,7 @@ function openBasketModal() {
 /**
  * Открыть модальное окно с первым шагом оформления
  */
-function openOrderStep1() {
+function openOrderDeliverForm() {
 	// подставим уже введённые ранее данные (если есть)
 	const data = buyer.getData();
 	orderForm.setPayment(data.payment);
@@ -167,7 +150,7 @@ function openOrderStep1() {
 /**
  * Открыть второй шаг оформления заказа
  */
-function openOrderStep2() {
+function openOrderContactsForm() {
 	const data = buyer.getData();
 	contactsForm.setEmail(data.email);
 	contactsForm.setPhone(data.phone);
@@ -192,11 +175,14 @@ function openSuccessModal(total: number) {
 
 // ===== Обработка событий моделей =====
 
+
 // 1. Каталог товаров изменился
+
 events.on<{ products: IProduct[] }>('catalog:changed', ({ products }) => {
 	const cards = products.map(createCatalogCard);
-	gallery.replaceChildren(...cards);
+	page.renderCatalog(cards);
 });
+
 
 // 2. Выбранный товар для предпросмотра изменился
 events.on<{ product: IProduct | null }>('preview:changed', ({ product }) => {
@@ -205,31 +191,21 @@ events.on<{ product: IProduct | null }>('preview:changed', ({ product }) => {
 		return;
 	}
 
-	const preview = new PreviewCard(previewTemplate, events, product.id);
-	preview.setTitle(product.title);
-	preview.setCategory(product.category as keyof typeof categoryMap);
-	preview.setDescription(product.description);
-	preview.setPrice(product.price);
-	preview.setCardImage(`${CDN_URL}${product.image}`, product.title);
-
 	// кнопка "В корзину"/"Удалить из корзины"
 	const inBasket = basket.hasProduct(product.id);
 	// товар считается доступным, если у него есть цена
   const available = product.price !== null;
 
-	preview.setInBasket(inBasket, available);
+	// Передаём данные текущего товара в уже созданный PreviewCard
+	previewView.setProduct(product, inBasket, available);
 
-	modal.open(preview.render());
+	// Показываем его в модалке
+	modal.open(previewView.render());
 });
 
 // 3. Корзина изменилась
 events.on('basket:changed', () => {
 	renderBasket();
-});
-
-// 4. Данные покупателя изменились (для живой валидации форм можно будет использовать)
-events.on('buyer:changed', () => {
-	// пока ничего не делаем, всё обновляется при открытии форм
 });
 
 // ===== Обработка событий View =====
@@ -270,30 +246,16 @@ events.on('basket:checkout', () => {
 	if (basket.getCount() === 0) {
 		return;
 	}
-	openOrderStep1();
+	openOrderDeliverForm();
 });
 
 // Сабмит первой формы (оплата + адрес)
-events.on<{ payment: string; address: string }>('order:submit-step1', (data) => {
-	// сохраняем в модель
-	buyer.setData({
-		payment: data.payment as 'online' | 'cash' | '',
-		address: data.address,
-	});
-
-	// валидируем все данные
-	const errors = buyer.validate();
-
-	orderForm.setErrors({
-		payment: errors.payment,
-		address: errors.address,
-	});
-
-	// форма валидна, если нет ошибок по оплате и адресу
-	orderForm.setValid(!errors.payment && !errors.address);
-	
-	openOrderStep2();
-});
+events.on<{ payment: string; address: string }>(
+	'order:submit-DeliverForm',
+	() => {
+		openOrderContactsForm();
+	}
+);
 
 // Живая валидация первой формы (оплата + адрес)
 events.on<{ payment: string; address: string }>('order:change', (data) => {
@@ -318,22 +280,7 @@ events.on<{ payment: string; address: string }>('order:change', (data) => {
 
 
 // Сабмит второй формы (email + телефон)
-events.on<{ email: string; phone: string }>('order:submit-step2', (data) => {
-	buyer.setData({
-		email: data.email,
-		phone: data.phone,
-	});
-
-	const errors = buyer.validate();
-
-	if (errors.email || errors.phone) {
-		contactsForm.setErrors({
-			email: errors.email,
-			phone: errors.phone,
-		});
-		contactsForm.setValid(false);
-		return;
-	}
+events.on<{ email: string; phone: string }>('order:submit-ContactsForm', () => {
 
 	// Собираем данные заказа
 	const orderRequest = {
@@ -385,7 +332,7 @@ events.on('success:close', () => {
 });
 
 // Клик по иконке корзины в шапке
-headerBasketButton.addEventListener('click', () => {
+events.on('ui:basket-open', () => {
 	openBasketModal();
 });
 
@@ -400,18 +347,3 @@ server
 		console.error('Ошибка при запросе каталога:', err);
 	});
 
-
-	// ТЕСТЫ
-
-	server
-	.getProducts()
-	.then((data) => {
-		// временная проверка: рисуем каталог без MVP-событий
-		const cards = data.items.map((product) => createCatalogCard(product));
-		gallery.replaceChildren(...cards);
-
-		catalog.setProducts(data.items);
-	})
-	.catch((err) => {
-		console.error('Ошибка при запросе каталога:', err);
-	});
